@@ -1,9 +1,25 @@
 package main
 
-import "os"
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"os"
+)
 
 type confInterface struct {
-	inFileHndl *os.File
+	fromFile  string
+	fromSTDIN bool
+}
+
+// Should be described!
+func (c confInterface) ReadFromFile() string {
+	return c.fromFile
+}
+
+// Shoud be described!
+func (c confInterface) ReadFromStdin() bool {
+	return c.fromSTDIN
 }
 
 func dataInSTDIN() (bool, error) {
@@ -15,12 +31,35 @@ func dataInSTDIN() (bool, error) {
 }
 
 func prodConf() (confInterface, error) {
-	got, err := dataInSTDIN()
-	if err != nil {
-		return confInterface{}, err
+	const emptyFName = ""
+	blindConf := confInterface{
+		fromFile:  "",
+		fromSTDIN: false,
 	}
-	if !got {
-		return confInterface{}, nil
+
+	fPathP := flag.String("i", emptyFName, "Path to the file containing gpx data.")
+	flag.Parse()
+	filePath := *fPathP
+
+	if filePath == emptyFName {
+		readStdin, err := dataInSTDIN()
+		if err != nil {
+			return blindConf, err
+		}
+		if readStdin {
+			return confInterface{
+					fromFile:  "",
+					fromSTDIN: true,
+				},
+				nil
+		}
+		return blindConf, errors.New("conf: if theres is no -i switch data should come from STDIN")
 	}
-	return confInterface{inFileHndl: os.Stdin}, nil
+
+	stat, errFS := os.Stat(filePath)
+	if errFS != nil {
+		return blindConf, errFS
+	}
+	fmt.Printf("stat %T, %+v", stat, stat)
+	return blindConf, nil
 }
