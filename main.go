@@ -1,22 +1,22 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"os"
+
+	tkgpxgo "github.com/tkrajina/gpxgo/gpx"
 )
 
 func main() {
-	conf, err := prodConf()
+	gpxData, err := tkgpxgo.Parse(os.Stdin)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%#v\n", conf)
-	if conf.ReadFromFile() != "" {
-		fmt.Println("From file")
+	if gpxData.GetTrackPointsNo() == 0 {
+		panic(errors.New("there is not track!"))
 	}
-	if conf.ReadFromStdin() {
-		fmt.Println("From STDIN")
-	}
-	if err != nil {
-		panic(err)
-	}
+	const metresInKM = 1000.00
+	fmt.Printf("Length2D is %.2f km\n", gpxData.Length2D()/metresInKM)
+	fmt.Printf("Length3D is %.2f km\n", gpxData.Length3D()/metresInKM)
 }
